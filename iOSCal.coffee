@@ -1,10 +1,14 @@
 #color settings for calendars
 #color is in format suitable for css
+
+#IMPORTANT: enter the names of the local calendars that you want to assign a colour.
+# Correspond a colour with each calendar.
+#Add or delete lines as appropriate. Unassigned Calendars will appear with white ribbon.
 calendars = [
-    {name:"prednasky",color:"gold"},
-    {name:"cvika",color:"mediumseagreen"},
-    {name:"Sviatky na Slovensku",color:"mediumpurple"},
-    {name:"zadania/zapocty/deadlines",color:"crimson"}
+    {name:"CalendarName1",color:"gold"},
+    {name:"CalendarName2",color:"mediumseagreen"},
+    {name:"CalendarName3",color:"mediumpurple"},
+    {name:"CalendarName4",color:"crimson"}
 ]
 
 #mode of widget (light)
@@ -14,9 +18,9 @@ mode = "dark"
 defColor = "white"
 
 # Bash command to pull events from icalBuddy
-# Set +2 to how many days you want to show
 # icalBuddy has more functionality that can be used here
-command: "/usr/local/bin/icalbuddy -n eventsToday+1"
+
+command: "/usr/local/bin/icalbuddy -n -eep location,notes,attendees,url  eventsToday+1"
 
 # Update is called once per hour
 refreshFrequency: "1h"
@@ -31,13 +35,14 @@ style: """
     font-weight: 400
     width: 100%
     height: 220px
-    position: absolute
-    top: 33%
+    position: relevant
+    top: 400px
+    Right:600px
     font-size: 14px
 
     #calendar
         border-radius: 10px
-        -webkit-backdrop-filter: blur(20px)
+        -webkit-backdrop-filter: blur(1px)
         width: 410px
         height: 200px
         position: absolute
@@ -45,7 +50,7 @@ style: """
         left 50%
         transform: translate(-50%,0)
         padding: 40px 20px 20px 20px
-        -webkit-box-shadow: 10px 10px 47px 0px rgba(0,0,0,0.54)
+       # -webkit-box-shadow: 10px 10px 47px 0px rgba(0,0,0,0.54)
         letter-spacing: 1px
 
     #calendar.dark
@@ -71,6 +76,7 @@ style: """
     header img
         width: 20px
         margin-right: 10px
+        height: 20px
 
     header .widgetName
         line-height: 20px
@@ -80,7 +86,7 @@ style: """
         height: 100%
 
     .eventBox
-        display: flex
+        display: center
         flex-direction: column
 
     .today h2
@@ -95,7 +101,7 @@ style: """
 
     .event .title
         line-height: 20px
-    
+        
     .event .leftBox
         width: 10%
         padding: 0 10px 0 0
@@ -106,15 +112,12 @@ style: """
         text-align: right
 
     .leftBox .time .from
-        line-height: 20px
+        line-height: 16px
+        font-size: 14px;
 
     .leftBox .time .to
         font-size: 12px;
-        line-height: 20px
-
-    .rightBox .location
-        font-size: 12px
-        line-height: 20px
+        line-height: 10px
 
     .nothing 
         text-align: center
@@ -148,14 +151,10 @@ update: (output, domEl) ->
 
     for i in [0...lines.length]
         name = lines[i].event[0];
-        location = lines[i].event[1];
-        if ( location.includes('location:'))
-            location = location.replace('location:','') 
-            location = location.replace(/\s/g, '')
-        time = lines[i].event[2];
+        time = lines[i].event[1];
         if (time.includes('    '))
             time = time.replace('    ', '')
-        lines[i].event = {"name":name,"location":location,"time":time}
+        lines[i].event = {"name":name,"time":time}
 
     inner = ''
     inner += "<header><img src='ubersicht-ios-clock-upnext-weather.widget/icons/calendar.png' alt='icon'></img><div class='widgetName'>UP NEXT</div></header>"
@@ -163,29 +162,29 @@ update: (output, domEl) ->
     tomorrow = []
 
     for i in [0...lines.length]
-        if (lines[i].event.time.includes('today'))
+        if (lines[i].event.time.includes('today at'))
             lines[i].event.time = lines[i].event.time.replace("today at ","")
             #lines[i].event.name = lines[i].event.name.replace(/\([A-z]*\)/i, "")
             lines[i].event.time = lines[i].event.time.split(' - ')
             today.push(lines[i].event)
             continue
-        else if(lines[i].event.location.includes('today'))
-            lines[i].event.location = ""
+        else if(lines[i].event.time.includes('today')&&!lines[i].event.time.includes('at'))
+            lines[i].event.time = lines[i].event.time.replace("today ","")
             lines[i].event.time = "Whole - Day"
             #lines[i].event.name = lines[i].event.name.replace(/\([A-z]*\)/i, "")
             lines[i].event.time = lines[i].event.time.split(' - ')
             today.push(lines[i].event)
             continue
 
-        else if (lines[i].event.time.includes('tomorrow'))
+        else if (lines[i].event.time.includes('tomorrow at'))
             lines[i].event.time = lines[i].event.time.replace("tomorrow at ","")
             #lines[i].event.name = lines[i].event.name.replace(/\([A-z]*\)/i, "")
             lines[i].event.time = lines[i].event.time.split(' - ')
             tomorrow.push(lines[i].event)
             continue
 
-        else if(lines[i].event.location.includes('tomorrow'))
-            lines[i].event.location = ""
+        else if(lines[i].event.time.includes('tomorrow')&&!lines[i].event.time.includes('at'))
+            lines[i].event.time = lines[i].event.time.replace("tomorrow ","")
             lines[i].event.time = "Whole - Day"
             #lines[i].event.name = lines[i].event.name.replace(/\([A-z]*\)/i, "")
             lines[i].event.time = lines[i].event.time.split(' - ')
@@ -205,7 +204,6 @@ update: (output, domEl) ->
             calendarColor = getCalendarColor(calendarName)
 
             name = name.replace(/\([a-zA-Z0-9\/\s]*?\)$/gmi, "")
-            loc = today[i].location
             time = today[i].time
             inner += "<div class='event'><div class='leftBox' style=' border-color: #{calendarColor}'><div class='time'><div class='from'>"
             inner += time[0]
@@ -213,8 +211,6 @@ update: (output, domEl) ->
             inner += time[1]
             inner += "</div></div></div><div class='rightBox'><div class='title'>"
             inner += name
-            inner += "</div><div class='location'>"
-            inner += loc
             inner += "</div></div></div>"
     else
         inner += "<div class='nothing'>No events today</div>"
@@ -233,7 +229,6 @@ update: (output, domEl) ->
             calendarColor = getCalendarColor(calendarName)
             
             name = name.replace(/\([a-zA-Z0-9\/\s]*?\)$/gmi, "")
-            loc = tomorrow[i].location
             time = tomorrow[i].time
             inner += "<div class='event'><div class='leftBox' style=' border-color: #{calendarColor}'><div class='time'><div class='from'>"
             inner += time[0]
@@ -241,8 +236,6 @@ update: (output, domEl) ->
             inner += time[1]
             inner += "</div></div></div><div class='rightBox'><div class='title'>"
             inner += name
-            inner += "</div><div class='location'>"
-            inner += loc
             inner += "</div></div></div>"
     else
         inner += "<div class='nothing'>No events tomorrow</div>"
